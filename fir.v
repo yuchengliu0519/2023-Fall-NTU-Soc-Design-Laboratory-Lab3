@@ -65,11 +65,14 @@ module fir
     assign arready = reg_arready;
     assign rvalid = reg_rvalid;
     assign rdata = reg_rdata;
+    reg reg_rvalid_temp;
+    reg reg_rvalid_temp2;
     always@(posedge axis_clk) begin
         if(axis_rst_n==0) begin
             reg_arready <= 1;
         end
-        else if((reg_arready == 1) && (arvalid == 1))begin
+       // else if((reg_arready == 1) && (arvalid == 1))begin
+       else if(arvalid == 1)begin
             reg_arready <= 0;
         end
         else begin
@@ -79,7 +82,7 @@ module fir
         if(axis_rst_n==0) begin
             reg_rvalid <= 0;
         end
-        else if((arvalid == 1) && (arready == 1)) begin
+        else if(reg_rvalid_temp2) begin
             reg_rvalid <= 1;
         end
         else if((reg_rvalid == 1) && (rready == 1))begin
@@ -89,15 +92,34 @@ module fir
             reg_rvalid <= reg_rvalid;
         end
         
-    end
-
-    always@(*) begin
-
-        if(reg_arready == arvalid)begin
-            reg_araddr = araddr;
+        if(axis_rst_n==0) begin
+            reg_rvalid_temp <= 0;
+        end
+        else if((arvalid == 1) && (arready == 1)) begin
+            reg_rvalid_temp <= 1;
         end
         else begin
-            reg_araddr = 0;
+            reg_rvalid_temp <= 0;
+        end
+        
+        if(axis_rst_n==0) begin
+            reg_rvalid_temp2 <= 0;
+        end
+        else if(reg_rvalid_temp) begin
+            reg_rvalid_temp2 <= 1;
+        end
+        else begin
+            reg_rvalid_temp2 <= 0;
+        end
+    end
+
+    always@(posedge axis_clk) begin
+
+        if(reg_arready == arvalid)begin
+            reg_araddr <= araddr;
+        end
+        else begin
+            reg_araddr <= reg_araddr;
         end
     end
     always@(*) begin
@@ -113,7 +135,7 @@ module fir
             end
         end
         else begin
-            reg_rdata = 0;
+            reg_rdata = reg_rdata;
         end
     end
     
@@ -151,24 +173,34 @@ module fir
             reg_wready <= 1;
         end
     end
-
-    always@(*) begin
-
-        if((reg_awready == 1) && (awvalid==1))begin
-            reg_awaddr = awaddr;
+    reg reg_wready_temp;
+    always@(posedge axis_clk) begin
+        if(axis_rst_n==0) begin
+            reg_wready_temp <= 0;
+        end
+        else if((reg_wready == 1) && (wvalid == 1) && awaddr>=12'h20)begin
+            reg_wready_temp <= 1;
         end
         else begin
-            reg_awaddr = 0;
+            reg_wready_temp <= 0;
+        end
+    end
+    always@(posedge axis_clk) begin
+        if((reg_awready == 1) && (awvalid==1))begin
+            reg_awaddr <= awaddr;
+        end
+        else begin
+            reg_awaddr <= reg_awaddr;
         end
     end
     
-    always@(*) begin
+    always@(posedge axis_clk) begin
 
         if((reg_wready == 1) && (wvalid == 1))begin
-            reg_wdata = wdata;
+            reg_wdata <= wdata;
         end
         else begin
-            reg_wdata = 0;
+            reg_wdata <= reg_wdata;
         end
     end
     always@(posedge axis_clk) begin
@@ -205,28 +237,28 @@ module fir
 
     assign tap_Di = reg_wdata;
     reg [(pADDR_WIDTH-1):0] reg_tap_A;
-    assign tap_A = reg_tap_A;
-    always@(*) begin
-        if(counter>=0 && counter<=10)begin
-            reg_tap_A = counter<<2;
+    assign tap_A = (counter>=0 && counter<=10)?(counter<<2):reg_tap_A;
+    always@(posedge axis_clk) begin
+        if(axis_rst_n==0)begin
+            reg_tap_A <= 0;
         end
-        else if(we==4'b1111)begin
-            reg_tap_A = reg_awaddr-32;
+        else if(reg_wready_temp)begin
+            reg_tap_A <= reg_awaddr-32;
         end
         else begin
-            reg_tap_A = reg_araddr-32;
+            reg_tap_A <= reg_araddr-32;
         end
     end
     
-    always@(*) begin
+    always@(posedge axis_clk) begin
         if(axis_rst_n==0) begin
-            we = 4'b0;
+            we <= 4'b0;
         end
-        else if((reg_awready == 1) && (awvalid == 1))begin
-            we = 4'b1111;
+        else if(reg_wready_temp)begin
+            we <= 4'b1111;
         end
         else begin
-            we = 0;
+            we <= 0;
         end
     end  
     /*
@@ -268,17 +300,7 @@ always@(*)begin
         reg_data_Di = 0;
     end
 end
-/*
-reg [(pADDR_WIDTH-1):0] reg_data_A;
-always@(posedge axis_clk)begin
-    if(axis_rst_n==0)begin
-        reg_data_A <= 0;
-    end
-    else begin
-        reg_data_A <= reg_data_A + 1;
-    end
-end
-*/
+
 always@(*)begin
     if(counter == 4'd11)begin
         reg_ss_tready =1;

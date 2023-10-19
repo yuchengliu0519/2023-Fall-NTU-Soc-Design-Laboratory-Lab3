@@ -1,3 +1,4 @@
+Vivado Simulator 2020.2
 Time resolution is 1 ps
 ------------Start simulation-----------
 ----Start the data input(AXI-Stream)----
@@ -615,9 +616,3 @@ OK: exp =           0, rdata =           0
 [PASS] [Pattern        595] Golden answer:       -1647, Your answer:       -1647
 [PASS] [Pattern        596] Golden answer:       -1464, Your answer:       -1464
 OK: exp =           0, rdata =           0
-------End the data input(AXI-Stream)------
-[PASS] [Pattern        597] Golden answer:       -1281, Your answer:       -1281
-[PASS] [Pattern        598] Golden answer:       -1098, Your answer:       -1098
-[PASS] [Pattern        599] Golden answer:        -915, Your answer:        -915
-OK: exp =           2, rdata =           6
-OK: exp =           4, rdata =           6
